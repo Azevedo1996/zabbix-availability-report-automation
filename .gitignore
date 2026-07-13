@@ -1,6 +1,14 @@
 .env
 output/*
 !output/.gitkeep
+!output/final/
+!output/final/.gitkeep
+!output/pages/
+!output/pages/.gitkeep
+!output/email/
+!output/email/.gitkeep
+!output/logs/
+!output/logs/.gitkeep
 secrets/*
 !secrets/.gitkeep
 __pycache__/

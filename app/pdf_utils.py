@@ -3,6 +3,8 @@ from pypdf import PdfMerger
 
 
 def merge_pdfs(paths, output_path):
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     merger = PdfMerger()
     for path in paths:
         path = Path(path)

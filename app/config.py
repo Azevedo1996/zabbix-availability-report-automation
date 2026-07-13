@@ -9,7 +9,7 @@ def env(name: str, default: str = "") -> str:
 
 
 def env_bool(name: str, default: bool = False) -> bool:
-    return env(name, str(default)).lower() in ("1", "true", "yes", "y")
+    return env(name, str(default)).lower() in ("1", "true", "yes", "y", "sim")
 
 
 def safe_group_key(group: str) -> str:
@@ -39,9 +39,9 @@ class Config:
     debug_screenshots: bool = env_bool("DEBUG_SCREENSHOTS", True)
     tz: str = env("TZ", "America/Sao_Paulo")
 
-    pdf_scale: float = float(env("PDF_SCALE", "0.95"))
-    print_font_size: float = float(env("PRINT_FONT_SIZE", "8.6"))
-    print_row_height: int = int(env("PRINT_ROW_HEIGHT", "15"))
+    pdf_scale: float = float(env("PDF_SCALE", "1.12"))
+    print_font_size: float = float(env("PRINT_FONT_SIZE", "9.8"))
+    print_row_height: int = int(env("PRINT_ROW_HEIGHT", "18"))
     hide_graph_column: bool = env_bool("HIDE_GRAPH_COLUMN", True)
 
     mail_from: str = env("MAIL_FROM")
@@ -55,3 +55,23 @@ class Config:
 
     def group_id(self, group: str) -> str:
         return env(f"GROUP_ID_{safe_group_key(group)}")
+
+    def validate(self):
+        errors = []
+        required = {
+            "ZABBIX_REPORT_URL": self.zabbix_report_url,
+            "ZABBIX_USER": self.zabbix_user,
+            "ZABBIX_PASSWORD": self.zabbix_password,
+            "REPORT_GROUPS": ",".join(self.report_groups),
+            "TEMPLATE_ID": self.template_id,
+            "TRIGGER_ID": self.trigger_id,
+            "MAIL_FROM": self.mail_from,
+            "MAIL_TO": self.mail_to,
+        }
+        for name, value in required.items():
+            if not value:
+                errors.append(f"Variável obrigatória ausente: {name}")
+        for group in self.report_groups:
+            if not self.group_id(group):
+                errors.append(f"GROUP_ID ausente para o grupo: {group}")
+        return errors

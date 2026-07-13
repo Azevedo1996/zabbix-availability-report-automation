@@ -22,5 +22,7 @@ def build_message(mail_from, mail_to, mail_cc, subject, body, attachment):
 
 
 def save_eml(message, output_path):
-    Path(output_path).write_bytes(bytes(message))
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_bytes(bytes(message))
     return output_path

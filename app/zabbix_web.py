@@ -12,10 +12,11 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 
 class ZabbixWebCollector:
-    def __init__(self, cfg, output_dir):
+    def __init__(self, cfg, output_dir, logger):
         self.cfg = cfg
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.logger = logger
         self.driver = None
         self.wait = None
 
@@ -46,12 +47,15 @@ class ZabbixWebCollector:
             path = self.output_dir / "prints_erro"
             path.mkdir(exist_ok=True)
             self.driver.save_screenshot(str(path / f"{name}.png"))
+            self.logger.info("Screenshot saved: %s", path / f"{name}.png")
 
     def login_if_needed(self):
+        self.logger.info("Opening Zabbix report URL")
         self.driver.get(self.cfg.zabbix_report_url)
         time.sleep(2)
 
         if "You are not logged in" in self.driver.page_source:
+            self.logger.info("Login intermediate screen detected")
             for xpath in [
                 "//button[contains(., 'Login')]",
                 "//a[contains(., 'Login')]",
@@ -64,8 +68,10 @@ class ZabbixWebCollector:
                     break
 
         if 'name="name"' not in self.driver.page_source and 'name="password"' not in self.driver.page_source:
+            self.logger.info("Already authenticated or no classic login form detected")
             return
 
+        self.logger.info("Filling Zabbix login form")
         user = self.wait.until(EC.presence_of_element_located((By.NAME, "name")))
         password = self.wait.until(EC.presence_of_element_located((By.NAME, "password")))
         user.clear()
@@ -83,6 +89,7 @@ class ZabbixWebCollector:
         if "Incorrect user name" in self.driver.page_source or 'name="password"' in self.driver.page_source:
             self.screenshot("erro_login")
             raise RuntimeError("Zabbix login failed. Check credentials and escape $ as $$ in .env.")
+        self.logger.info("Zabbix login completed")
 
     def build_url(self, group, start_dt, end_dt):
         group_id = self.cfg.group_id(group)
@@ -139,7 +146,6 @@ class ZabbixWebCollector:
               }
             });
             """
-
         return f"""
         window.scrollTo(0, 0);
         [...document.querySelectorAll('a')].forEach(anchor => anchor.removeAttribute('href'));
@@ -193,21 +199,25 @@ class ZabbixWebCollector:
                 "preferCSSPageSize": True,
             },
         )
-        Path(path).write_bytes(base64.b64decode(result["data"]))
+        path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(base64.b64decode(result["data"]))
 
     def collect_group(self, group, start_dt, end_dt):
         base_url = self.build_url(group, start_dt, end_dt)
         self.driver.get(base_url)
         time.sleep(3)
         total = self.total_pages()
-        print(f"[INFO] Group {group}: {total} page(s) detected")
+        self.logger.info("Group %s: %s page(s) detected", group, total)
 
         generated = []
         safe_name = group.replace(" ", "_").replace("-", "_")
+        pages_dir = self.output_dir / "pages"
         for page_number in range(1, total + 1):
+            self.logger.info("Collecting %s page %s/%s", group, page_number, total)
             self.driver.get(self.page_url(base_url, page_number))
             time.sleep(2.5)
-            pdf_path = self.output_dir / f"{safe_name}_page_{page_number}.pdf"
+            pdf_path = pages_dir / f"{safe_name}_page_{page_number}.pdf"
             self.print_pdf(pdf_path)
             generated.append(pdf_path)
         return generated
