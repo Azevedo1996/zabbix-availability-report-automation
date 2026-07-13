@@ -1,122 +1,88 @@
 # Zabbix Availability Report Automation
 
-Docker-based automation that uses Selenium/Chromium to collect Zabbix `report2.php` availability reports, generate PDFs per host group, merge everything into a consolidated PDF, and create a ready-to-send `.eml` message.
+Automação baseada em **Docker**, **Python** e **Selenium/Chromium** para coletar relatórios de disponibilidade do Zabbix pela página `report2.php`, gerar PDFs por grupo de hosts, consolidar tudo em um único PDF final e criar um arquivo `.eml` pronto para envio por e-mail.
 
-This repository is sanitized for public GitHub usage. It contains no real credentials, internal URLs, hostnames, e-mail addresses, or generated reports.
+Este repositório foi preparado para uso público no GitHub e **não contém credenciais reais, URLs internas, nomes de hosts, e-mails corporativos ou relatórios gerados**.
 
-## Features
+---
 
-- Runs in Docker.
-- Logs in to the Zabbix web interface.
-- Calculates the previous month automatically.
-- Opens direct Zabbix `report2.php` URLs using host group, template, and trigger IDs.
-- Supports paginated Zabbix reports such as `page=1`, `page=2`, and `page=3`.
-- Prints each logical Zabbix page as A2 landscape PDF.
-- Optionally hides the `Graph` column to improve readability.
-- Merges all generated PDFs into one final report.
-- Generates a `.eml` file with the final PDF attached.
+## Por que usar este projeto?
 
-## Requirements
+Em muitos ambientes, o relatório de disponibilidade do Zabbix precisa ser coletado manualmente todos os meses, acessando a interface web, aplicando filtros de período, selecionando grupos de hosts, exportando páginas e consolidando os arquivos.
 
-- Docker Desktop or Docker Engine.
-- Network access from the container to the Zabbix URL.
-- A Zabbix user allowed to access the availability report page.
+Este projeto automatiza esse processo.
 
-## Quick Start
+Com ele, é possível:
 
-```powershell
-copy .env.example .env
-```
+- reduzir trabalho manual recorrente;
+- padronizar a geração mensal do relatório;
+- evitar esquecimentos ou erros de filtro;
+- coletar múltiplos grupos de hosts automaticamente;
+- gerar um PDF consolidado;
+- preparar um e-mail com o relatório em anexo;
+- executar a rotina por agendamento no Windows ou Linux.
 
-Edit `.env` and fill in:
+A automação é especialmente útil quando o relatório depende da interface web do Zabbix e não há, no momento, acesso viável pela API.
 
-```env
-ZABBIX_REPORT_URL=https://zabbix.example.com/zabbix/report2.php
-ZABBIX_USER=your_zabbix_username
-ZABBIX_PASSWORD=your_zabbix_password
-TEMPLATE_ID=00000
-TRIGGER_ID=00000
-GROUP_ID_Network_Devices=123
-```
+---
 
-If your password contains `$`, escape it as `$$` in `.env` when using Docker Compose.
+## Funcionalidades
 
-Example:
+- Executa em container Docker.
+- Usa Selenium com Chromium em modo headless.
+- Realiza login na interface web do Zabbix.
+- Calcula automaticamente o mês anterior.
+- Acessa URLs diretas do `report2.php` usando:
+  - ID do grupo de hosts;
+  - ID do template;
+  - ID da trigger.
+- Suporta paginação do relatório, como:
+  - `page=1`
+  - `page=2`
+  - `page=3`
+- Gera PDF em formato **A2 paisagem**.
+- Permite ocultar a coluna **Graph/Gráfico** para melhorar a leitura.
+- Gera um PDF por grupo/página.
+- Consolida todos os PDFs em um único arquivo final.
+- Gera um arquivo `.eml` com o PDF anexado.
+- Pode ser executado mensalmente pelo Agendador de Tarefas do Windows.
 
-```env
-ZABBIX_PASSWORD=abc$$def
-```
+---
 
-Then run:
+## Requisitos
 
-```powershell
-docker compose build --no-cache
-docker compose run --rm zabbix-report
-```
+Antes de usar, é necessário ter:
 
-Generated files are saved in:
+- Docker Desktop ou Docker Engine instalado;
+- acesso de rede do container até a URL do Zabbix;
+- usuário do Zabbix com permissão para acessar o relatório de disponibilidade;
+- IDs dos grupos de hosts que serão consultados;
+- ID do template e da trigger usados no relatório.
 
-```text
-output/
-```
+---
 
-## PDF Settings
-
-Default A2 landscape settings:
-
-```env
-PDF_SCALE=0.95
-PRINT_FONT_SIZE=8.6
-PRINT_ROW_HEIGHT=15
-HIDE_GRAPH_COLUMN=true
-```
-
-If the report is too small:
-
-```env
-PDF_SCALE=1.00
-PRINT_FONT_SIZE=9.0
-PRINT_ROW_HEIGHT=16
-```
-
-If the report cuts rows:
-
-```env
-PDF_SCALE=0.90
-PRINT_FONT_SIZE=8.0
-PRINT_ROW_HEIGHT=14
-```
-
-## Windows Task Scheduler
-
-Create a `run.bat` task action pointing to:
+## Estrutura do projeto
 
 ```text
-C:\path\to\repo\run.bat
-```
-
-Recommended trigger:
-
-```text
-Monthly, day 1, 08:00
-```
-
-The script calculates the previous month automatically.
-
-## Repository Hygiene
-
-The `.gitignore` blocks:
-
-- `.env`
-- generated PDFs
-- generated `.eml` files
-- screenshots and logs from `output/`
-- secret files
-
-Before pushing to GitHub, verify:
-
-```powershell
-git status
-```
-
-No `.env`, report PDFs, screenshots, or internal files should appear in the staged changes.
+.
+├── app/
+│   ├── __init__.py
+│   ├── config.py
+│   ├── mail_sender.py
+│   ├── main.py
+│   ├── pdf_utils.py
+│   └── zabbix_web.py
+├── output/
+│   └── .gitkeep
+├── secrets/
+│   └── .gitkeep
+├── .env.example
+├── .gitignore
+├── docker-compose.yml
+├── Dockerfile
+├── LICENSE
+├── README.md
+├── requirements.txt
+├── run.bat
+└── SECURITY.md
+``
