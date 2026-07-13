@@ -1,0 +1,10 @@
+services:
+  zabbix-report:
+    build: .
+    container_name: zabbix-availability-report
+    env_file:
+      - .env
+    volumes:
+      - ./output:/app/output
+      - ./secrets:/app/secrets:ro
+    shm_size: "2gb"

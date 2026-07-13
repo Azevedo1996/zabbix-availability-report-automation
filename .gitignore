@@ -1,0 +1,13 @@
+.env
+output/*
+!output/.gitkeep
+secrets/*
+!secrets/.gitkeep
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+*.log
+.DS_Store
+Thumbs.db
